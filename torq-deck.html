@@ -1,0 +1,1275 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>The Research You Shouldn't Run Alone — Torq deck</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=Instrument+Serif:ital@0;1&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* deep blue-purple base (swapped in for Torq's black) */
+  --bg-0:#080720;
+  --bg-1:#0e0b30;
+  --bg-2:#160f45;
+  /* accents kept from Torq */
+  --blue:#2f5cff;
+  --blue-bright:#4d7bff;
+  --cyan:#8ff5ff;
+  --magenta:#ff27a8;
+  --violet:#a618e9;
+  --green:#00d084;
+  /* ink */
+  --ink:#ffffff;
+  --ink-soft:#c8c4ec;
+  --ink-mute:#7b76a8;
+  --line:rgba(255,255,255,.10);
+  --dot:rgba(255,255,255,.16);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{height:100%;background:var(--bg-0);overflow:hidden;}
+body{font-family:"Inter",sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased;}
+
+/* ---------- deck mechanics ---------- */
+.deck{position:fixed;inset:0;}
+.slide{
+  position:absolute;inset:0;display:none;
+  padding:7vh 8vw;flex-direction:column;justify-content:center;
+  background:
+    radial-gradient(1200px 700px at 85% -10%, rgba(47,92,255,.20), transparent 60%),
+    radial-gradient(900px 600px at 0% 110%, rgba(166,24,233,.18), transparent 60%),
+    linear-gradient(160deg,var(--bg-0),var(--bg-1) 55%,var(--bg-2));
+  overflow:hidden;
+}
+.slide.active{display:flex;animation:fade .5s ease}
+@keyframes fade{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+
+/* dot-grid texture — big rounded radial fade; dots dissolve toward the
+   rounded corners. --fade-x / --fade-y are randomized per slide by JS. */
+.slide::before{
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background-image:radial-gradient(circle, var(--dot) 1.5px, transparent 1.6px);
+  background-size:30px 30px;
+  -webkit-mask-image:radial-gradient(78% 82% at var(--fade-x,50%) var(--fade-y,50%),
+     #000 26%, rgba(0,0,0,.55) 58%, transparent 92%);
+          mask-image:radial-gradient(78% 82% at var(--fade-x,50%) var(--fade-y,50%),
+     #000 26%, rgba(0,0,0,.55) 58%, transparent 92%);
+  opacity:.9;
+}
+.slide > *{position:relative;z-index:2}
+
+/* ---------- shared type ---------- */
+.eyebrow{
+  font-family:"IBM Plex Mono",monospace;font-weight:500;
+  font-size:clamp(12px,1.15vw,16px);letter-spacing:.28em;text-transform:uppercase;
+  color:var(--cyan);display:flex;align-items:center;gap:.7em;margin-bottom:3.2vh;
+}
+.eyebrow.mute{color:var(--ink-mute)}
+.eyebrow .bar{width:34px;height:2px;background:var(--cyan);box-shadow:0 0 14px var(--cyan)}
+h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter-spacing:.01em}
+/* unified slide-title size — one large scale across all content slides */
+.slide h2{font-size:clamp(40px,6vw,104px)}
+.lead{font-size:clamp(20px,2.3vw,32px);font-weight:400;color:var(--ink-soft);
+  line-height:1.5;max-width:34ch;margin-top:3.5vh;}
+.serif{font-family:"Instrument Serif",serif;font-style:italic;font-weight:400;text-transform:none}
+.b{color:var(--blue-bright)}.m{color:var(--magenta)}.c{color:var(--cyan)}.v{color:var(--violet)}
+.glow-b{text-shadow:0 0 40px rgba(77,123,255,.55)}
+.glow-m{text-shadow:0 0 40px rgba(255,39,168,.45)}
+
+/* footer chrome */
+.chrome{position:fixed;left:0;right:0;bottom:0;z-index:50;display:flex;
+  justify-content:space-between;align-items:center;padding:2.4vh 8vw;
+  font-family:"IBM Plex Mono",monospace;font-size:12px;letter-spacing:.18em;
+  color:var(--ink-mute);text-transform:uppercase}
+.chrome .dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 10px var(--green);display:inline-block;margin-right:.6em;animation:pulse 1.8s infinite}
+.chrome .nav{display:flex;align-items:center;gap:.9em}
+#goto{width:4.2em;background:rgba(255,255,255,.05);border:1px solid var(--line);
+  border-radius:6px;color:var(--ink-soft);font-family:"IBM Plex Mono";font-size:12px;
+  letter-spacing:.14em;text-transform:uppercase;text-align:center;padding:.4em .2em;outline:none}
+#goto:focus{border-color:var(--cyan);box-shadow:0 0 10px rgba(143,245,255,.25);color:var(--cyan)}
+#goto::placeholder{color:var(--ink-mute)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.progress{position:fixed;top:0;left:0;height:3px;
+  background:linear-gradient(90deg,var(--blue),var(--magenta));z-index:60;
+  transition:width .35s ease;box-shadow:0 0 12px rgba(77,123,255,.6)}
+
+/* ---------- slide 1: title ---------- */
+.title-slide{text-align:left}
+.title-slide .kit{font-family:"Bebas Neue",sans-serif;font-size:clamp(52px,8vw,140px);
+  line-height:.86;letter-spacing:.005em;max-width:48vw}
+.title-slide .sub,.title-slide .meta{max-width:40vw}
+.title-slide .hero-art{position:absolute;right:-4vw;top:50%;transform:translateY(-50%);
+  width:52vw;height:auto;object-fit:contain;
+  z-index:1;pointer-events:none;
+  /* video now ships a real alpha channel (black keyed out), so it sits on the
+     deck blue with a clean transparent background — no blend hack needed. */
+  mix-blend-mode:normal}
+.title-slide .kit .row2{color:var(--ink)}
+.title-slide .sub{font-family:"Inter";font-weight:500;font-size:clamp(18px,2vw,28px);
+  color:var(--ink-soft);margin-top:4vh;max-width:34ch;line-height:1.45}
+.title-slide .meta{margin-top:6vh;font-family:"IBM Plex Mono";font-size:13px;
+  letter-spacing:.2em;color:var(--ink-mute);text-transform:uppercase}
+
+/* ---------- slide 2: meet phebe ---------- */
+.phebe-slide{align-items:center;text-align:center;justify-content:center}
+.phebe-slide h2{font-size:clamp(40px,6vw,104px)}
+.phebe-status{font-family:"IBM Plex Mono",monospace;font-size:clamp(13px,1.2vw,17px);
+  letter-spacing:.06em;color:var(--ink-soft);margin-top:2.6vh}
+.phebe-orb{width:min(70vh,90vw);height:min(70vh,90vw);margin-top:-1vh;
+  pointer-events:none}
+
+/* ---------- thesis diagram ---------- */
+.diagram{display:flex;align-items:stretch;justify-content:center;gap:0;margin-top:5vh}
+.node{flex:1;border:1px solid var(--line);border-radius:18px;padding:3.2vh 2vw;
+  background:rgba(255,255,255,.03);text-align:center;display:flex;flex-direction:column;
+  justify-content:center;min-height:26vh}
+.node .role{font-family:"IBM Plex Mono";font-size:12px;letter-spacing:.22em;
+  text-transform:uppercase;color:var(--ink-mute);margin-bottom:1.4vh}
+.node .name{font-family:"Bebas Neue";font-size:clamp(26px,3vw,46px);letter-spacing:.02em;line-height:1}
+.node .tag{font-family:"Inter";font-size:14px;color:var(--ink-soft);margin-top:1.4vh}
+.node.edge{border-color:rgba(77,123,255,.5);box-shadow:0 0 50px rgba(47,92,255,.18) inset,0 0 30px rgba(47,92,255,.12)}
+.node.edge .name{color:var(--blue-bright)}
+.node.center{border-color:rgba(255,39,168,.6);transform:scale(1.12);z-index:3;
+  background:rgba(255,39,168,.06);box-shadow:0 0 80px rgba(255,39,168,.25),0 0 50px rgba(255,39,168,.18) inset}
+.node.center .name{color:#fff}
+.connector{display:flex;align-items:center;justify-content:center;width:6vw;position:relative}
+.connector::after{content:"";height:1px;width:100%;
+  background:linear-gradient(90deg,rgba(77,123,255,.6),rgba(255,39,168,.6))}
+.connector .pip{position:absolute;width:8px;height:8px;border-radius:50%;background:var(--cyan);
+  box-shadow:0 0 12px var(--cyan)}
+/* ---- slide 4: statement title centered both axes ---- */
+.statement-slide{align-items:center;justify-content:center;text-align:center}
+.statement-slide h2{max-width:80vw}
+/* 007 logo above the title (pink) */
+.bond-icon{display:flex;align-items:center;justify-content:center;
+  color:var(--magenta);margin-bottom:20px;
+  filter:drop-shadow(0 0 34px rgba(255,39,168,.55))}
+.bond-icon .bond-gun{width:clamp(150px,20vw,320px);height:auto;display:block}
+
+/* ---- "what makes it an agent" — four cards ---- */
+.kicker-green{font-family:"IBM Plex Mono";font-size:clamp(12px,1.1vw,15px);
+  letter-spacing:.28em;text-transform:uppercase;color:#8fff6b;
+  text-shadow:0 0 24px rgba(140,255,107,.4)}
+.agent-slide{align-items:center;justify-content:center;text-align:center}
+/* title pinned 100px from the top; cards stay centered on screen */
+.agent-slide h2{position:absolute;left:8vw;right:8vw;top:100px;
+  font-size:clamp(40px,6vw,96px)}
+.agent-slide .sub{font-family:"Inter";color:var(--ink-soft);
+  font-size:clamp(16px,1.7vw,24px);margin-bottom:5vh}
+.four-cards{display:flex;gap:1.8vw;width:100%;justify-content:center;align-items:stretch}
+.four-card{position:relative;overflow:visible;flex:1 1 0;min-width:0;text-align:left;
+  border-radius:20px;background:rgba(255,255,255,.035);border:1px solid var(--line);
+  padding:3vh 1.7vw;display:flex;flex-direction:column;min-height:44vh;opacity:1}
+.four-card .ic{width:clamp(44px,3.4vw,58px);height:clamp(44px,3.4vw,58px);
+  border-radius:14px;background:rgba(140,255,107,.14);border:1px solid rgba(140,255,107,.30);
+  display:flex;align-items:center;justify-content:center;color:#8fff6b;
+  margin-bottom:3.2vh;font-family:"Bebas Neue";font-size:clamp(22px,2vw,30px)}
+.four-card .ic svg{width:55%;height:55%}
+/* uniform: every card image is the same size + spacing, each on a blue glow */
+.four-card .card-art{position:relative;z-index:1;align-self:center;
+  display:flex;align-items:center;justify-content:center;margin:0 auto 2.4vh}
+/* soft blue glow behind the agent image (no pattern) */
+.four-card .card-art::before{content:"";position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%);width:150%;aspect-ratio:1;border-radius:50%;z-index:0;
+  pointer-events:none;
+  background:radial-gradient(circle, rgba(77,123,255,.6) 0%, rgba(77,123,255,.26) 30%, rgba(77,123,255,.08) 54%, transparent 80%)}
+.four-card .card-img{position:relative;z-index:1;
+  height:clamp(160px,30vh,232px);width:auto;object-fit:contain;display:block;
+  filter:drop-shadow(0 0 26px rgba(77,123,255,.45))}
+.four-card h3{font-family:"Inter";font-weight:700;font-size:clamp(18px,1.8vw,26px);
+  color:#fff;margin-bottom:1.6vh;letter-spacing:-.01em}
+.four-card p{font-family:"Inter";color:var(--ink-soft);
+  font-size:clamp(14px,1.35vw,19px);line-height:1.5}
+/* first card shows on enter; the rest reveal one per click, in place */
+.agent-slide.active .four-card:first-child{animation:skillIn .5s cubic-bezier(.2,.7,.25,1) both}
+.four-card.frag{opacity:0;transform:translateY(16px) scale(.98)}
+.four-card.frag.show{animation:skillIn .5s cubic-bezier(.2,.7,.25,1) both}
+
+/* ---- "a simple test" — Skill vs Agent, drawn as a branching workflow ---- */
+.test-slide{align-items:center;justify-content:center;text-align:center}
+.test-eyebrow{font-family:"IBM Plex Mono";font-size:clamp(12px,1.1vw,15px);
+  letter-spacing:.28em;text-transform:uppercase;color:var(--magenta);
+  text-shadow:0 0 24px rgba(255,39,168,.4);margin-bottom:5vh}
+.flow{display:flex;align-items:center;justify-content:center;width:100%;max-width:1480px}
+/* the question node (start of the flow) */
+.flow-q{flex:0 0 auto;width:clamp(280px,25vw,420px);text-align:left;
+  border-radius:22px;padding:4vh 2vw;background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,39,168,.5);
+  box-shadow:0 0 70px rgba(255,39,168,.18),inset 0 0 50px rgba(255,39,168,.06)}
+.flow-q .lbl{font-family:"IBM Plex Mono";letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-mute);font-size:clamp(12px,1.1vw,15px);margin-bottom:2.4vh}
+.flow-q .q{font-family:"Bebas Neue";font-size:clamp(30px,3.4vw,56px);line-height:.98;
+  letter-spacing:.01em;color:#fff}
+/* the two outcome branches */
+.flow-arms{display:flex;flex-direction:column;gap:7vh}
+.arm{display:flex;align-items:center}
+/* connector arrow + label */
+/* angled connectors: branch from the question up to SKILL / down to AGENT */
+.arrow{position:relative;flex:0 0 auto;width:clamp(110px,13vw,210px);height:2px;
+  margin:0 1.3vw;transform-origin:right center}
+.arm.yes .arrow{background:linear-gradient(90deg,var(--blue-bright),rgba(77,123,255,.35));
+  transform:rotate(-24deg)}
+.arm.no  .arrow{background:linear-gradient(90deg,var(--magenta),rgba(255,39,168,.35));
+  transform:rotate(24deg)}
+.arrow::after{content:"";position:absolute;right:-2px;top:50%;transform:translateY(-50%);
+  border:7px solid transparent;border-left-width:9px}
+.arm.yes .arrow::after{border-left-color:var(--blue-bright)}
+.arm.no  .arrow::after{border-left-color:var(--magenta)}
+.arr-lbl{position:absolute;left:50%;top:-2.3em;
+  font-family:"IBM Plex Mono";font-size:clamp(12px,1.1vw,15px);letter-spacing:.18em;
+  text-transform:uppercase;white-space:nowrap}
+/* keep the label upright despite the angled arrow */
+.arm.yes .arr-lbl{color:var(--blue-bright);transform:translateX(-50%) rotate(24deg)}
+.arm.no  .arr-lbl{color:var(--magenta);transform:translateX(-50%) rotate(-24deg)}
+/* outcome cards */
+.res-card{flex:0 0 auto;width:clamp(230px,23vw,380px);text-align:left;
+  border-radius:20px;padding:3.4vh 1.8vw;background:rgba(255,255,255,.035);border:1px solid var(--line)}
+.res-card .big{font-family:"Bebas Neue";font-size:clamp(40px,5vw,82px);line-height:.9;margin-bottom:1.6vh}
+.res-card p{font-family:"Inter";color:var(--ink-soft);font-size:clamp(14px,1.25vw,18px);line-height:1.45}
+.res-card.skill{border-color:rgba(77,123,255,.55);
+  box-shadow:0 0 60px rgba(47,92,255,.18),inset 0 0 40px rgba(47,92,255,.06)}
+.res-card.skill .big{color:var(--blue-bright)}
+.res-card.agent{border-color:rgba(255,39,168,.6);
+  box-shadow:0 0 70px rgba(255,39,168,.2),inset 0 0 44px rgba(255,39,168,.07)}
+.res-card.agent .big{color:var(--magenta);text-shadow:0 0 50px rgba(255,39,168,.45)}
+/* each branch reveals on its own click */
+.arm.frag{opacity:0;transform:translateX(-12px);transition:opacity .5s ease,transform .5s ease}
+.arm.frag.show{opacity:1;transform:none}
+
+/* ---- slide 5: narrow center card + animated "edge" lines (build steps) ---- */
+.thesis-slide{text-align:center}
+/* centered title pinned 100px from the top */
+.thesis-slide h2{position:absolute;left:8vw;right:8vw;top:100px;transform:none}
+
+/* zero-height anchor pinned to the vertical center; children hang off it */
+.thesis-slide .diagram{position:absolute;left:0;right:0;top:50%;height:0;
+  margin:0;transform:none;display:block;overflow:visible}
+
+/* center card — narrower, dead-center (+20% width vs. before) */
+.thesis-slide .node.center{position:absolute;left:50%;top:0;
+  transform:translate(-50%,-50%) scale(1.04);
+  width:clamp(216px,18vw,288px);min-height:23vh;padding:2.8vh 1.4vw;overflow:visible}
+/* skull mascot popping up over the top edge of the center card */
+.thesis-slide .node.center .skull{position:absolute;left:50%;bottom:calc(100% - 6vh);
+  transform:translateX(-50%);width:clamp(104px,9.2vw,148px);height:auto;
+  pointer-events:none;z-index:5;
+  filter:drop-shadow(0 0 24px rgba(255,39,168,.30)) drop-shadow(0 0 12px rgba(143,245,255,.22))}
+
+/* each edge group hangs off a center-card edge and runs outward */
+.thesis-slide .side{position:absolute;top:0;display:flex;align-items:center;
+  transform:translateY(-50%)}
+.thesis-slide .side.right{left:calc(50% + clamp(216px,18vw,288px)/2)}
+.thesis-slide .side.left {right:calc(50% + clamp(216px,18vw,288px)/2)}
+.thesis-slide .side .node.edge{flex:0 0 auto;width:clamp(180px,15.5vw,252px);
+  min-height:20vh;opacity:0}
+
+/* the animated connecting line — right is long, left is longer */
+.edge-line{display:block;height:2px;border-radius:2px;flex:0 0 auto;
+  background:linear-gradient(90deg,rgba(255,39,168,.75),rgba(77,123,255,.75));
+  box-shadow:0 0 14px rgba(77,123,255,.5);position:relative;transform:scaleX(0)}
+.edge-line::after{content:"";position:absolute;top:50%;width:10px;height:10px;
+  border-radius:50%;background:var(--cyan);box-shadow:0 0 14px var(--cyan);
+  transform:translateY(-50%)}
+.side.right .edge-line{width:19vw;transform-origin:left center}
+.side.right .edge-line::after{right:-4px}     /* pip leads outward */
+.side.left  .edge-line{width:19vw;transform-origin:right center}
+.side.left  .edge-line::after{left:-4px}
+
+/* reveal: draw the line, then fade the card in at the end of the line */
+.thesis-slide .side.show .edge-line{animation:edgeDraw .85s cubic-bezier(.2,.7,.2,1) forwards}
+.thesis-slide .side.show .node.edge{animation:edgeCardIn .5s ease .6s forwards}
+@keyframes edgeDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+@keyframes edgeCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+
+/* ---------- slide 3: isometric square layers (centered) ---------- */
+.layers-slide{align-items:center;justify-content:center;text-align:center}
+.layers-title{position:absolute;top:100px;left:0;right:0;
+  font-family:"Bebas Neue";font-size:clamp(32px,4.4vw,72px);letter-spacing:.04em;
+  line-height:1;color:var(--ink);text-shadow:0 0 55px rgba(77,123,255,.45)}
+/* robot mascot video on the left; black bg dissolves into the deck blue */
+/* the agent sits dead-center at first; on the 1st click the layers arrive
+   (.iso-stage.show) and the robot fades + shrinks away in its place */
+.layers-slide .robot-art{position:absolute;left:50%;top:52%;
+  transform:translate(-50%,-50%);width:min(110vh,94vw);height:auto;
+  z-index:4;pointer-events:none;mix-blend-mode:screen;
+  transition:opacity .5s ease, transform .5s ease}
+.layers-slide .iso-stage.show ~ .robot-art{opacity:0;
+  transform:translate(-50%,-50%) scale(.85)}
+
+/* full-width stage; the pile is flex-centered so it sits dead-center */
+.iso-stage{position:relative;width:100%;height:58vh;
+  display:flex;align-items:center;justify-content:center}
+/* iso-wrap is sized to the diamond's bounding box and is the anchor for the
+   callouts, so they hang off its right edge and never move the centered pile */
+.iso-wrap{position:relative;width:46vmin;height:44vmin;
+  display:flex;align-items:center;justify-content:center}
+/* no perspective → clean parallel (isometric) projection, stays centered */
+.iso{position:relative;width:32vmin;height:32vmin;transform-style:preserve-3d;
+  transform:rotateX(57deg) rotateZ(-43deg)}
+
+/* one square layer = a flat sheet, no thickness; drops in when the iso-stage
+   build-step is revealed (2nd click) — hidden until then */
+.slab{--s:32vmin;--t:0;--z:0;position:absolute;inset:0;transform-style:preserve-3d;
+  transform:translateZ(var(--z));opacity:0}
+.slab.s4{--z:-12vmin}
+.slab.s3{--z:-4vmin}
+.slab.s2{--z:4vmin}
+.slab.s1{--z:12vmin}
+.iso-stage.show .slab.s4{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .10s both}
+.iso-stage.show .slab.s3{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .40s both}
+.iso-stage.show .slab.s2{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .70s both}
+.iso-stage.show .slab.s1{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) 1.00s both}
+@keyframes slabDrop{
+  0%  {opacity:0;transform:translateZ(calc(var(--z) + 24vmin))}
+  100%{opacity:1;transform:translateZ(var(--z))}
+}
+
+.face{position:absolute;top:50%;left:50%;backface-visibility:hidden}
+/* big faces fill the slab exactly (inset:0) — keeps the diamond centered */
+.f-front,.f-back{width:var(--s);height:var(--s);border-radius:14px;top:0;left:0}
+.f-right,.f-left{width:var(--t);height:var(--s)}
+.f-top,.f-bottom{width:var(--s);height:var(--t)}
+.f-front {transform:translateZ(calc(var(--t)/2))}
+.f-back  {transform:translateZ(calc(var(--t)/-2)) rotateY(180deg)}
+.f-right {transform:translate(-50%,-50%) rotateY(90deg)  translateZ(calc(var(--s)/2))}
+.f-left  {transform:translate(-50%,-50%) rotateY(-90deg) translateZ(calc(var(--s)/2))}
+.f-top   {transform:translate(-50%,-50%) rotateX(90deg)  translateZ(calc(var(--s)/2))}
+.f-bottom{transform:translate(-50%,-50%) rotateX(-90deg) translateZ(calc(var(--s)/2))}
+
+/* the square face = a glass card, same look as the slide-4 nodes */
+.f-front{background:rgba(255,255,255,.04);border:1px solid var(--line)}
+.f-right,.f-left,.f-top,.f-bottom,.f-back{background:transparent;border:0}
+.s1 .f-front{border-color:rgba(77,123,255,.65);
+  box-shadow:0 0 60px rgba(47,92,255,.25),inset 0 0 40px rgba(47,92,255,.10)}
+.s2 .f-front{border-color:rgba(166,24,233,.65);
+  box-shadow:0 0 60px rgba(166,24,233,.25),inset 0 0 40px rgba(166,24,233,.10)}
+.s3 .f-front{border-color:rgba(143,245,255,.6);
+  box-shadow:0 0 60px rgba(143,245,255,.22),inset 0 0 40px rgba(143,245,255,.10)}
+.s4 .f-front{border-color:rgba(0,208,132,.6);
+  box-shadow:0 0 60px rgba(0,208,132,.22),inset 0 0 40px rgba(0,208,132,.10)}
+
+/* ---- emphasis slides: same stack, then spotlight a pair of layers ---- */
+/* the pile builds in on slide-enter (like slide 3's final state) */
+.emph-slide.active .slab.s4,.edges-slide.active .slab.s4{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .10s both}
+.emph-slide.active .slab.s3,.edges-slide.active .slab.s3{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .40s both}
+.emph-slide.active .slab.s2,.edges-slide.active .slab.s2{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .70s both}
+.emph-slide.active .slab.s1,.edges-slide.active .slab.s1{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) 1.00s both}
+.emph-slide .emph.show ~ .iso-stage .slab,
+.edges-slide .emph.show ~ .iso-stage .slab{transition:opacity .55s ease,filter .55s ease}
+
+/* slide 14 — spotlight the two MIDDLE layers (Context + Skills), dim the edges */
+.emph-slide .emph.show ~ .iso-stage .slab.s1,
+.emph-slide .emph.show ~ .iso-stage .slab.s4{opacity:.42;filter:grayscale(.5) brightness(.95)}
+.emph-slide .emph.show ~ .iso-stage .slab.s3 .f-front{border-color:rgba(143,245,255,.95);
+  box-shadow:0 0 110px rgba(143,245,255,.6),inset 0 0 64px rgba(143,245,255,.24);
+  transition:box-shadow .55s ease,border-color .55s ease}
+.emph-slide .emph.show ~ .iso-stage .slab.s2 .f-front{border-color:rgba(166,24,233,.95);
+  box-shadow:0 0 110px rgba(166,24,233,.6),inset 0 0 64px rgba(166,24,233,.24);
+  transition:box-shadow .55s ease,border-color .55s ease}
+
+/* edges slide — spotlight the FIRST + LAST layers (Agent + Autonomy), dim the middle */
+.edges-slide .emph.show ~ .iso-stage .slab.s2,
+.edges-slide .emph.show ~ .iso-stage .slab.s3{opacity:.42;filter:grayscale(.5) brightness(.95)}
+.edges-slide .emph.show ~ .iso-stage .slab.s1 .f-front{border-color:rgba(77,123,255,.95);
+  box-shadow:0 0 110px rgba(47,92,255,.6),inset 0 0 64px rgba(47,92,255,.24);
+  transition:box-shadow .55s ease,border-color .55s ease}
+.edges-slide .emph.show ~ .iso-stage .slab.s4 .f-front{border-color:rgba(0,208,132,.95);
+  box-shadow:0 0 110px rgba(0,208,132,.6),inset 0 0 64px rgba(0,208,132,.24);
+  transition:box-shadow .55s ease,border-color .55s ease}
+
+/* context slide — build the pile, then spotlight ONLY the Context layer (s3) */
+.context-slide.active .slab.s4{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .10s both}
+.context-slide.active .slab.s3{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .40s both}
+.context-slide.active .slab.s2{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) .70s both}
+.context-slide.active .slab.s1{animation:slabDrop .7s cubic-bezier(.2,.7,.25,1) 1.00s both}
+.context-slide .emph.show ~ .iso-stage .slab{transition:opacity .55s ease,filter .55s ease}
+.context-slide .emph.show ~ .iso-stage .slab.s1,
+.context-slide .emph.show ~ .iso-stage .slab.s2,
+.context-slide .emph.show ~ .iso-stage .slab.s4{opacity:.42;filter:grayscale(.5) brightness(.95)}
+.context-slide .emph.show ~ .iso-stage .slab.s3 .f-front{border-color:rgba(143,245,255,.95);
+  box-shadow:0 0 110px rgba(143,245,255,.6),inset 0 0 64px rgba(143,245,255,.24);
+  transition:box-shadow .55s ease,border-color .55s ease}
+
+/* labels fade in with the emphasis (both slides) */
+.emph.show ~ .iso-stage .callout{opacity:1;transition:opacity .55s ease .2s}
+.emph.show ~ .iso-stage .callout .co-line{transform:scaleX(1);
+  transition:transform .5s ease .25s}
+
+/* plain thin leader lines exiting the RIGHT of the stack, each ending in text.
+   Absolute inside iso-wrap, so revealing them never moves the centered pile.
+   Hidden until their .frag is revealed by an arrow press (.show). */
+.callout{position:absolute;left:99%;display:flex;align-items:center;gap:.6vw;
+  white-space:nowrap;opacity:0;transform:translateY(-50%)}
+.co-line{display:block;height:1px;width:3vw;background:var(--ink-soft);
+  transform-origin:left center;transform:scaleX(0)}
+/* label styled like the title "LIVE AGENTS RUNNING" meta tag */
+.co-txt{font-family:"IBM Plex Mono";text-transform:uppercase;letter-spacing:.16em;
+  font-size:clamp(10px,1vw,14px);color:var(--ink-mute);text-align:left}
+.co-txt b{display:block;color:var(--ink);font-size:1.25em;letter-spacing:.1em;
+  margin-bottom:.25em;font-weight:600}
+/* rows aligned to the four layers (top → bottom of the pile) */
+.callout.r1{top:27%}
+.callout.r2{top:43%}
+.callout.r3{top:57%}
+.callout.r4{top:73%}
+/* reveal on arrow press */
+.callout.show{animation:coIn .45s ease forwards}
+.callout.show .co-line{animation:lineGrow .5s ease .1s forwards}
+@keyframes coIn{from{opacity:0;transform:translateY(calc(-50% + 8px))}to{opacity:1;transform:translateY(-50%)}}
+@keyframes lineGrow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+
+/* two-column content */
+.cols{display:flex;gap:4vw;margin-top:5vh}
+.col{flex:1;border-top:2px solid var(--line);padding-top:2.4vh}
+.col .k{font-family:"IBM Plex Mono";font-size:12px;letter-spacing:.2em;text-transform:uppercase;
+  color:var(--ink-mute);margin-bottom:1.6vh}
+.col h3{font-family:"Bebas Neue";font-size:clamp(26px,3vw,44px);line-height:1;letter-spacing:.02em}
+.col p{font-family:"Inter";color:var(--ink-soft);font-size:clamp(15px,1.4vw,20px);
+  line-height:1.5;margin-top:1.6vh;max-width:30ch}
+.col.win{border-top-color:var(--blue-bright)}
+.col.risk{border-top-color:var(--magenta)}
+
+/* context chips */
+.chips{display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;
+  gap:1.8vh .7vw;margin-top:5vh;max-width:none;width:100%}
+.chip{font-family:"IBM Plex Mono";font-size:clamp(14px,1.5vw,24px);padding:.5em 1em;
+  border:1px solid var(--line);border-radius:999px;color:var(--ink-soft);background:rgba(255,255,255,.03)}
+/* extra sources: hidden by default (only ~1.5 rows show), revealed on click,
+   each chip pops in one-after-another for the "…a LOT of context" gag */
+.more-group{display:contents}
+.more-group .chip{display:none}
+.more-group.show .chip{display:inline-flex;
+  animation:chipPop .4s cubic-bezier(.2,.7,.25,1) backwards;
+  animation-delay:calc(var(--i)*0.045s)}
+@keyframes chipPop{from{opacity:0;transform:scale(.8) translateY(10px)}
+  to{opacity:1;transform:none}}
+
+/* full-screen wall of sources — no title, uniform chips edge to edge */
+.wall-slide{padding:3.5vh 3.5vw;justify-content:center;align-items:center}
+.wall{display:flex;flex-wrap:wrap;justify-content:flex-start;align-content:flex-start;
+  gap:1.8vh .7vw;width:100%;height:100%}
+.wall .chip{opacity:1}
+/* staggered pop-in when the wall slide becomes active (--i set by JS).
+   `backwards` (not `both`) so once it finishes the transform is free again —
+   lets the burst push the chips around. */
+.wall-slide.active .chip{animation:chipPop .4s cubic-bezier(.2,.7,.25,1) backwards;
+  animation-delay:calc(var(--i,0)*0.014s)}
+
+/* the skull "bomb" — bursts into the center on the next click */
+.wall-slide .boom{position:absolute;left:50%;top:50%;
+  transform:translate(-50%,-50%) scale(.2);width:min(48vh,48vw);height:auto;
+  opacity:0;z-index:30;pointer-events:none;
+  filter:drop-shadow(0 0 70px rgba(143,245,255,.45))}
+.wall-slide .boom.show{animation:boomIn .6s cubic-bezier(.2,1.5,.3,1) forwards}
+@keyframes boomIn{
+  0%  {opacity:0;transform:translate(-50%,-50%) scale(.15) rotate(-10deg)}
+  55% {opacity:1;transform:translate(-50%,-50%) scale(1.14) rotate(4deg)}
+  100%{opacity:1;transform:translate(-50%,-50%) scale(1)    rotate(0)}}
+/* central chips get blown aside (--dx/--dy/--rot set by JS) */
+.wall-slide .boom.show ~ .wall .chip.near{
+  transform:translate(var(--dx,0),var(--dy,0)) rotate(var(--rot,0));
+  transition:transform .55s cubic-bezier(.2,.85,.25,1)}
+
+/* skills stack */
+.stack{display:flex;flex-direction:column;gap:1.6vh;margin-top:4vh;max-width:46ch}
+.skill{display:flex;align-items:center;gap:1.2vw;border:1px solid var(--line);
+  border-radius:14px;padding:2vh 1.6vw;background:rgba(255,255,255,.03)}
+.skill .num{font-family:"Bebas Neue";font-size:clamp(28px,3vw,46px);color:var(--violet);min-width:2ch}
+.skill .t{font-family:"Bebas Neue";font-size:clamp(20px,2.1vw,32px);letter-spacing:.02em;line-height:1}
+.skill .d{font-family:"Inter";color:var(--ink-mute);font-size:14px;margin-top:.3vh}
+
+/* skills list — original big single-column cards, split across two slides */
+.skills-slide{justify-content:center;align-items:flex-start;text-align:left}
+.skills-slide h2{font-size:clamp(24px,3.2vw,48px);text-align:left;margin-bottom:3.4vh}
+/* the two skill columns sit side by side, left-aligned */
+.skills-2col{display:flex;gap:2.4vw;width:100%;justify-content:flex-start;align-items:stretch}
+/* columns fill the container width (no max-width cap), cards grow to fill */
+.skills-slide .stack{gap:1.4vh;margin-top:0;flex:1;max-width:none}
+.skills-slide .skill{padding:2.3vh 1.8vw;opacity:0}
+.skills-slide .skill .t{font-size:clamp(22px,2.3vw,34px)}
+/* skills cascade in on slide-enter: left column first, then right (--i by JS) */
+.skills-slide.active .skill{animation:skillIn .45s cubic-bezier(.2,.7,.25,1) both;
+  animation-delay:calc(var(--i,0)*0.09s)}
+@keyframes skillIn{from{opacity:0;transform:translateY(16px) scale(.97)}
+  to{opacity:1;transform:none}}
+
+/* ---- instruct slide: 4-point brief on the left, layer stack on the right ---- */
+.instruct-slide{justify-content:center;align-items:center;text-align:left}
+/* brief panel pinned left; the layer stack stays centered (continues slide 15) */
+.instruct-panel{position:absolute;left:6vw;top:50%;transform:translateY(-50%);
+  width:min(33vw,470px);z-index:5}
+/* whole brief panel in the footer's muted grayish-purple (--ink-mute) */
+.instruct-panel .pre{font-family:"IBM Plex Mono";color:var(--ink-mute);letter-spacing:.2em;
+  text-transform:uppercase;font-size:clamp(12px,1.1vw,15px);margin-bottom:3vh}
+.instruct-item{display:flex;gap:1.1vw;margin-bottom:2.4vh}
+.instruct-item .n{font-family:"Bebas Neue";color:#fff;
+  font-size:clamp(26px,2.6vw,42px);line-height:.9;min-width:1.3em}
+.instruct-item h4{font-family:"Inter";font-weight:700;color:#fff;
+  font-size:clamp(15px,1.45vw,21px);margin-bottom:.5vh;letter-spacing:-.01em}
+.instruct-item h4 .why{font-weight:400;color:var(--ink-mute);text-transform:lowercase}
+.instruct-item p{font-family:"Inter";font-style:italic;color:var(--ink-mute);
+  font-size:clamp(12px,1.1vw,16px);line-height:1.45;max-width:34ch}
+/* each point reveals on its own click (space reserved, so nothing jumps) */
+.instruct-item.frag{opacity:0}
+.instruct-item.frag.show{animation:skillIn .45s cubic-bezier(.2,.7,.25,1) both}
+/* stack centered + same size/position as slide 15, already emphasizing Skills + Context */
+.instruct-slide .iso-stage{position:relative;width:100%;height:58vh;
+  display:flex;align-items:center;justify-content:center}
+.instruct-slide .slab{opacity:1}
+.instruct-slide .slab.s1,.instruct-slide .slab.s4{opacity:.42;filter:grayscale(.5) brightness(.95)}
+.instruct-slide .slab.s3 .f-front{border-color:rgba(143,245,255,.95);
+  box-shadow:0 0 110px rgba(143,245,255,.6),inset 0 0 64px rgba(143,245,255,.24)}
+.instruct-slide .slab.s2 .f-front{border-color:rgba(166,24,233,.95);
+  box-shadow:0 0 110px rgba(166,24,233,.6),inset 0 0 64px rgba(166,24,233,.24)}
+/* SKILLS + CONTEXT labels already shown (exactly where slide 15 ends) */
+.instruct-slide .callout{opacity:1}
+.instruct-slide .callout .co-line{transform:scaleX(1)}
+
+/* centered video slide — black bg dissolves into the deck blue */
+.video-slide{justify-content:center;align-items:center}
+.video-slide .full-video{width:88vw;height:auto;object-fit:contain;z-index:2;
+  mix-blend-mode:screen}
+/* glass sticky notes — warm yellow tint so they pop off the blue board.
+   One unified look for every note (Challenges included). */
+.sticky{position:absolute;z-index:6;width:min(21vh,18vw);height:min(21vh,18vw);
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-family:"Bebas Neue";font-size:clamp(18px,2.3vw,40px);letter-spacing:.03em;
+  line-height:1.0;color:#fff;padding:8px;border-radius:16px;
+  overflow-wrap:break-word;word-break:break-word;
+  background:rgba(255,209,77,.20);border:1px solid rgba(255,221,120,.65);
+  box-shadow:0 14px 40px rgba(255,196,46,.32),inset 0 0 26px rgba(255,221,120,.18);
+  -webkit-backdrop-filter:blur(9px) saturate(1.3);backdrop-filter:blur(9px) saturate(1.3);
+  transform:rotate(var(--rot,-5deg));opacity:0}
+/* auto-cascade: notes slap in one after another on slide-enter (--i = order) */
+.video-slide.active .sticky{animation:stickIn .55s cubic-bezier(.2,1.6,.35,1) both;
+  animation-delay:calc(var(--i,0)*0.55s)}
+@keyframes stickIn{
+  0%  {opacity:0;transform:rotate(var(--rot,-5deg)) scale(1.8)}
+  55% {opacity:1;transform:rotate(var(--rot,-5deg)) scale(.9)}
+  100%{opacity:1;transform:rotate(var(--rot,-5deg)) scale(1)}}
+
+/* big closing */
+.closing h2{font-size:clamp(40px,6vw,104px)}
+.closing .punch{display:block;margin-top:1.5vh}
+.kicker{font-family:"Bebas Neue";font-size:clamp(30px,4vw,68px);line-height:1;letter-spacing:.02em}
+.note{margin-top:4vh;font-family:"IBM Plex Mono";font-size:13px;color:var(--ink-mute);
+  letter-spacing:.04em;max-width:52ch;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="progress" id="prog"></div>
+<div class="deck" id="deck">
+
+  <!-- 1 · TITLE -->
+  <section class="slide active title-slide">
+    <video class="hero-art" src="assets/team.webm" autoplay loop muted playsinline></video>
+    <div class="kit">
+      <span class="b glow-b">THE&nbsp;RESEARCH</span><br>
+      <span class="row2">YOU&nbsp;SHOULDN'T</span><br>
+      <span class="row2">RUN&nbsp;<span class="serif" style="color:var(--magenta)">alone</span></span>
+    </div>
+    <div class="sub">How agents became my research team.</div>
+    <div class="meta">// LIVE AGENTS RUNNING · 2026</div>
+  </section>
+
+  <!-- 2 · HOOK -->
+  <section class="slide phebe-slide">
+    <h2>MEET <span class="b glow-b">PHEBE</span>.</h2>
+    <div class="phebe-status">Phebe is speaking…</div>
+    <canvas class="phebe-orb" id="phebeOrb" aria-hidden="true"></canvas>
+  </section>
+
+  <!-- 3 · LAYERS (centered isometric stack + callouts) -->
+  <section class="slide layers-slide">
+    <div class="layers-title">AGENTS</div>
+    <div class="iso-stage frag">
+      <div class="iso-wrap">
+        <div class="iso">
+          <div class="slab s4">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s3">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s2">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s1">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+        </div>
+        <div class="callout r4 frag">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>AGENT</b>what it is &amp; how it works</span>
+        </div>
+        <div class="callout r3 frag">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>CONTEXT</b>everything it reads before a task</span>
+        </div>
+        <div class="callout r2 frag">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>SKILLS</b>the professional brain</span>
+        </div>
+        <div class="callout r1 frag">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>AUTONOMY</b>how much it decides on its own</span>
+        </div>
+      </div>
+    </div>
+    <!-- after iso-stage in DOM so it fades out once the layers (.iso-stage.show) arrive -->
+    <video class="robot-art" src="assets/robot.mp4" autoplay loop muted playsinline></video>
+  </section>
+
+  <!-- 4 · STATEMENT -->
+  <section class="slide statement-slide">
+    <div class="bond-icon">
+      <svg class="bond-gun" viewBox="0 15 48 18" fill="currentColor" aria-hidden="true"><path d="M25.5,20.1c0.2-1.1,1-2.2,1-2.2h4.8c-1.8,4.7-5.9,6.2-8.2,13.1h3.9c1-5.4,8.1-9.4,8.1-15H24.9c0,0-1.6,3-1.6,4.1L25.5,20.1L25.5,20.1z M7.4,16C3.3,16,0,21.5,0,26c0,1.4,0.6,5,3.9,5C8,31,11,25.4,11,21.2C11,17.1,8.6,16,7.4,16z M3.1,29.5c-0.5,0-0.6-0.8-0.6-1.4c0-2.2,3.3-10.7,5.1-10.7c0.1,0,0.6,0.2,0.6,1.5C8.2,23.2,4.4,29.5,3.1,29.5z M18.7,16c-4.1,0-7.4,5.5-7.4,10c0,1.4,0.6,5,3.9,5c4.1,0,7.1-5.6,7.1-9.8C22.3,17.1,19.9,16,18.7,16z M14.4,29.5c-0.5,0-0.6-0.8-0.6-1.4c0-2.2,3.3-10.7,5.1-10.7c0.1,0,0.6,0.2,0.6,1.5C19.5,23.2,15.7,29.5,14.4,29.5z M48,16c0,0,0,1.3-1.1,2.2h-2.6c-0.4,0-0.9,0.4-1.1,0.8h-7.4c0.5-1.3,0.7-3,0.7-3H48z M42.4,20c-0.2,0.3-0.6,0.6-1,0.6c-0.7,0-1.1,0.1-1.3,0.5c-0.2,0.4-1.1,1.9-1.4,2.4c-0.3,0.5-0.9,1.4-1.9,1.4S32,25,32,25l0.8-1h3.5c0,0,0.8,0,1.1-0.5c0.4-0.5,1.2-2.4,1.2-2.4h-2.3c0,0-0.3,0.3-0.3,0.8s0.2,1.2,0.2,1.2s-1.1-1.2-1.1-2c0-0.5,0.1-0.9,0.2-1.1H42.4z"/></svg>
+    </div>
+    <h2>EVERYONE HAS AN <span class="serif m glow-m">“agent”</span></h2>
+  </section>
+
+  <!-- 5 · WHAT MAKES IT AN AGENT — four things -->
+  <section class="slide agent-slide">
+    <h2>WHAT MAKES IT AN AGENT</h2>
+    <div class="four-cards">
+      <div class="four-card">
+        <span class="card-art"><img class="card-img" src="assets/robot-clock.png" alt="" /></span>
+        <h3>Autonomy</h3>
+        <p>Time independence — it runs on its own, not only when you're there talking to it.</p>
+      </div>
+      <div class="four-card frag">
+        <span class="card-art"><img class="card-img" src="assets/robot-loop.png" alt="" /></span>
+        <h3>Loop</h3>
+        <p>Check, act, check again, adjust — until the result is good enough.</p>
+      </div>
+      <div class="four-card frag">
+        <span class="card-art"><img class="card-img" src="assets/robot-judge.png" alt="" /></span>
+        <h3>Judgment</h3>
+        <p>It has to choose between several options — not follow one fixed path.</p>
+      </div>
+      <div class="four-card frag">
+        <span class="card-art"><img class="card-img" src="assets/robot-zen.png" alt="" /></span>
+        <h3>Memory</h3>
+        <p>Persistent context — it remembers who it is and what its role is, over time.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 · A SIMPLE TEST — Skill vs Agent (branching workflow) -->
+  <section class="slide test-slide">
+    <div class="flow">
+      <div class="flow-q">
+        <div class="lbl">THE QUESTION</div>
+        <div class="q">Can I write the exact instructions up&nbsp;front?</div>
+      </div>
+      <div class="flow-arms">
+        <div class="arm yes frag">
+          <span class="arrow"><span class="arr-lbl">if yes</span></span>
+          <div class="res-card skill">
+            <div class="big">SKILL</div>
+            <p>The steps are knowable in advance. Spell the whole thing out once and reuse it.</p>
+          </div>
+        </div>
+        <div class="arm no frag">
+          <span class="arrow"><span class="arr-lbl">if no</span></span>
+          <div class="res-card agent">
+            <div class="big">AGENT</div>
+            <p>It depends on the situation, the context, on changing information — so it needs room to decide.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENT LAYERS · spotlight ONLY the Context layer (sets up the next slide) -->
+  <section class="slide layers-slide context-slide">
+    <div class="layers-title">AGENTS</div>
+    <span class="emph frag"></span>
+    <div class="iso-stage">
+      <div class="iso-wrap">
+        <div class="iso">
+          <div class="slab s4">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s3">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s2">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s1">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+        </div>
+        <div class="callout r3">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>CONTEXT</b>everything it reads</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 7 · CONTEXT IS FUEL -->
+  <section class="slide">
+    <h2>THE EDGE RUNS ON <span class="c">CONTEXT</span>.</h2>
+    <div class="lead">No designer could ever read through all of this before <b style="color:var(--ink)">every single task</b>.</div>
+    <div class="chips">
+      <!-- always visible: a few sources ("it can scan context") -->
+      <span class="chip">Slack</span>
+      <span class="chip">Emails</span>
+      <span class="chip">Zoom transcripts</span>
+      <span class="chip">Notion</span>
+      <span class="chip">Jira</span>
+      <!-- revealed on click, staggered ("…a LOT of context") — ~4 rows total -->
+      <span class="more-group frag">
+        <span class="chip" style="--i:0">Confluence</span>
+        <span class="chip" style="--i:1">Monday</span>
+        <span class="chip" style="--i:2">Code history</span>
+        <span class="chip" style="--i:3">Core identity</span>
+        <span class="chip" style="--i:4">WhatsApp</span>
+        <span class="chip" style="--i:5">Figma</span>
+        <span class="chip" style="--i:6">Google Drive</span>
+        <span class="chip" style="--i:7">Linear</span>
+        <span class="chip" style="--i:8">GitHub PRs</span>
+        <span class="chip" style="--i:9">Git commits</span>
+        <span class="chip" style="--i:10">Calendar</span>
+        <span class="chip" style="--i:11">Loom</span>
+        <span class="chip" style="--i:12">Support tickets</span>
+        <span class="chip" style="--i:13">Analytics</span>
+        <span class="chip" style="--i:14">Mixpanel</span>
+        <span class="chip" style="--i:15">CRM</span>
+        <span class="chip" style="--i:16">Salesforce</span>
+        <span class="chip" style="--i:17">PRDs &amp; specs</span>
+        <span class="chip" style="--i:18">Design system</span>
+        <span class="chip" style="--i:19">Roadmap</span>
+        <span class="chip" style="--i:20">User research</span>
+        <span class="chip" style="--i:21">Brand guidelines</span>
+        <span class="chip" style="--i:22">Meeting notes</span>
+        <span class="chip" style="--i:23">Gong</span>
+        <span class="chip" style="--i:24">Miro</span>
+      </span>
+    </div>
+  </section>
+
+  <!-- 5b · FULL-SCREEN WALL OF SOURCES (no title) -->
+  <section class="slide wall-slide">
+    <img class="boom frag" src="assets/skull-burst.png" alt="" aria-hidden="true" />
+    <div class="wall">
+      <span class="chip">Slack</span><span class="chip">MS Teams</span><span class="chip">Discord</span>
+      <span class="chip">Zoom</span><span class="chip">Google Meet</span><span class="chip">Gmail</span>
+      <span class="chip">Outlook</span><span class="chip">WhatsApp</span><span class="chip">Telegram</span>
+      <span class="chip">Notion</span><span class="chip">Confluence</span><span class="chip">Google Docs</span>
+      <span class="chip">Google Drive</span><span class="chip">Sheets</span><span class="chip">Slides</span>
+      <span class="chip">Dropbox</span><span class="chip">OneDrive</span><span class="chip">SharePoint</span>
+      <span class="chip">Coda</span><span class="chip">Guru</span><span class="chip">Wiki</span>
+      <span class="chip">Jira</span><span class="chip">Linear</span><span class="chip">Asana</span>
+      <span class="chip">Monday</span><span class="chip">Trello</span><span class="chip">ClickUp</span>
+      <span class="chip">Airtable</span><span class="chip">Productboard</span><span class="chip">Aha!</span>
+      <span class="chip">Shortcut</span><span class="chip">Canny</span>
+      <span class="chip">Figma</span><span class="chip">FigJam</span><span class="chip">Sketch</span>
+      <span class="chip">Adobe XD</span><span class="chip">Miro</span><span class="chip">Whimsical</span>
+      <span class="chip">Zeplin</span><span class="chip">Framer</span><span class="chip">Storybook</span>
+      <span class="chip">InVision</span><span class="chip">Abstract</span><span class="chip">Lottie</span>
+      <span class="chip">Design system</span><span class="chip">Style guide</span><span class="chip">Brand guidelines</span>
+      <span class="chip">Dovetail</span><span class="chip">Maze</span><span class="chip">UserTesting</span>
+      <span class="chip">Optimal Workshop</span><span class="chip">Hotjar</span><span class="chip">FullStory</span>
+      <span class="chip">Lookback</span><span class="chip">User research</span>
+      <span class="chip">GitHub</span><span class="chip">GitLab</span><span class="chip">Bitbucket</span>
+      <span class="chip">Git commits</span><span class="chip">Pull requests</span><span class="chip">Issues</span>
+      <span class="chip">Code history</span><span class="chip">Jenkins</span><span class="chip">CircleCI</span>
+      <span class="chip">Vercel</span><span class="chip">Netlify</span><span class="chip">Docker</span>
+      <span class="chip">Kubernetes</span>
+      <span class="chip">Google Analytics</span><span class="chip">Mixpanel</span><span class="chip">Amplitude</span>
+      <span class="chip">Heap</span><span class="chip">Pendo</span><span class="chip">Segment</span>
+      <span class="chip">Looker</span><span class="chip">Tableau</span><span class="chip">Metabase</span>
+      <span class="chip">Power BI</span><span class="chip">BigQuery</span><span class="chip">Snowflake</span>
+      <span class="chip">dbt</span><span class="chip">Redshift</span><span class="chip">Postgres</span>
+      <span class="chip">SQL / DB</span><span class="chip">Dashboards</span>
+      <span class="chip">Salesforce</span><span class="chip">HubSpot</span><span class="chip">Pipedrive</span>
+      <span class="chip">Marketo</span><span class="chip">Mailchimp</span><span class="chip">Intercom</span>
+      <span class="chip">Drift</span><span class="chip">Google Ads</span><span class="chip">Meta Ads</span>
+      <span class="chip">LinkedIn</span>
+      <span class="chip">Zendesk</span><span class="chip">Freshdesk</span><span class="chip">Help Scout</span>
+      <span class="chip">Gong</span><span class="chip">Chorus</span><span class="chip">Support tickets</span>
+      <span class="chip">Otter</span><span class="chip">Fireflies</span><span class="chip">Granola</span>
+      <span class="chip">Loom</span><span class="chip">Calendar</span><span class="chip">Meeting notes</span>
+      <span class="chip">App Store reviews</span><span class="chip">Play Store reviews</span><span class="chip">Surveys</span>
+      <span class="chip">Typeform</span><span class="chip">NPS</span><span class="chip">Changelog</span>
+      <span class="chip">Stripe</span><span class="chip">QuickBooks</span><span class="chip">Workday</span>
+      <span class="chip">BambooHR</span><span class="chip">Greenhouse</span><span class="chip">Lever</span>
+      <span class="chip">Sentry</span><span class="chip">Datadog</span><span class="chip">PagerDuty</span>
+      <span class="chip">Grafana</span><span class="chip">Kibana</span><span class="chip">Logs</span>
+      <span class="chip">Core identity</span><span class="chip">Roadmap</span><span class="chip">PRDs &amp; specs</span>
+      <span class="chip">Customer calls</span><span class="chip">Standups</span><span class="chip">Help center</span>
+    </div>
+  </section>
+
+  <!-- playful transition (duplicate of "but hey") -->
+  <section class="slide statement-slide">
+    <h2 class="serif glow-m" style="font-style:italic;color:var(--ink);font-size:clamp(34px,5.2vw,82px);max-width:22ch">But hey, while we're at it, <span class="m">why not…</span></h2>
+  </section>
+
+  <!-- 9 · STATEMENT · your method -->
+  <section class="slide statement-slide">
+    <h2>YOUR METHOD. <span class="serif m glow-m">every single time.</span></h2>
+  </section>
+
+  <!-- SKILLS · two columns, one slide -->
+  <section class="slide skills-slide">
+    <h2>YOUR METHOD. <span class="serif m glow-m">every single time.</span></h2>
+    <div class="skills-2col">
+      <div class="stack">
+        <div class="skill"><div class="num">01</div><div><div class="t">USER RESEARCH</div><div class="d">personas, interviews, journey maps</div></div></div>
+        <div class="skill"><div class="num">02</div><div><div class="t">INFORMATION ARCHITECTURE</div><div class="d">structure, navigation, taxonomy</div></div></div>
+        <div class="skill"><div class="num">03</div><div><div class="t">COMPETITIVE ANALYSIS</div><div class="d">benchmark rivals, find the gaps</div></div></div>
+        <div class="skill"><div class="num">04</div><div><div class="t">DESIGN PRINCIPLES</div><div class="d">the rules that resolve trade-offs</div></div></div>
+        <div class="skill"><div class="num">05</div><div><div class="t">COLOR&nbsp;SYSTEM</div><div class="d">palette, semantics, contrast</div></div></div>
+        <div class="skill"><div class="num">06</div><div><div class="t">TYPOGRAPHY SCALE</div><div class="d">modular type, hierarchy</div></div></div>
+      </div>
+      <div class="stack">
+        <div class="skill"><div class="num">07</div><div><div class="t">LAYOUT&nbsp;&amp;&nbsp;GRID</div><div class="d">responsive structure</div></div></div>
+        <div class="skill"><div class="num">08</div><div><div class="t">VISUAL HIERARCHY</div><div class="d">what the eye reads first</div></div></div>
+        <div class="skill"><div class="num">09</div><div><div class="t">INTERACTION &amp; MOTION</div><div class="d">states, gestures, feedback</div></div></div>
+        <div class="skill"><div class="num">10</div><div><div class="t">LOADING &amp; EMPTY STATES</div><div class="d">the graceful in-betweens</div></div></div>
+        <div class="skill"><div class="num">11</div><div><div class="t">HEURISTIC EVALUATION</div><div class="d">Nielsen's 10 heuristics</div></div></div>
+        <div class="skill"><div class="num">12</div><div><div class="t">USABILITY TESTING</div><div class="d">test plans, scenarios, tasks</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- SKILLS · overflow · two more columns, no title -->
+  <section class="slide skills-slide">
+    <div class="skills-2col">
+      <div class="stack">
+        <div class="skill"><div class="num">13</div><div><div class="t">A/B&nbsp;EXPERIMENTS</div><div class="d">hypotheses, metrics, power</div></div></div>
+        <div class="skill"><div class="num">14</div><div><div class="t">UX&nbsp;WRITING</div><div class="d">microcopy, errors, empty states</div></div></div>
+        <div class="skill"><div class="num">15</div><div><div class="t">DESIGN SYSTEMS</div><div class="d">tokens, components, theming</div></div></div>
+        <div class="skill"><div class="num">16</div><div><div class="t">ACCESSIBILITY</div><div class="d">WCAG, contrast, screen readers</div></div></div>
+        <div class="skill"><div class="num">17</div><div><div class="t">RESPONSIVE DESIGN</div><div class="d">breakpoints, fluid layouts</div></div></div>
+        <div class="skill"><div class="num">18</div><div><div class="t">DARK&nbsp;MODE</div><div class="d">elevation, adapted contrast</div></div></div>
+        <div class="skill"><div class="num">19</div><div><div class="t">DATA&nbsp;VISUALIZATION</div><div class="d">chart choice, clarity</div></div></div>
+      </div>
+      <div class="stack">
+        <div class="skill"><div class="num">20</div><div><div class="t">ICONOGRAPHY</div><div class="d">a consistent visual language</div></div></div>
+        <div class="skill"><div class="num">21</div><div><div class="t">SPACING&nbsp;SYSTEM</div><div class="d">rhythm from a base unit</div></div></div>
+        <div class="skill"><div class="num">22</div><div><div class="t">PROTOTYPING</div><div class="d">fidelity, flows, fast tests</div></div></div>
+        <div class="skill"><div class="num">23</div><div><div class="t">DESIGN&nbsp;HANDOFF</div><div class="d">specs, tokens, code-ready</div></div></div>
+        <div class="skill"><div class="num">24</div><div><div class="t">STAKEHOLDER ALIGNMENT</div><div class="d">decisions, buy-in, comms</div></div></div>
+        <div class="skill"><div class="num">25</div><div><div class="t">METRICS &amp; KPIS</div><div class="d">tie design to outcomes</div></div></div>
+        <div class="skill"><div class="num">26</div><div><div class="t">NORTH-STAR VISION</div><div class="d">where the product is going</div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 12 · DESIGN SPRINT (full-bleed video) -->
+  <section class="slide video-slide">
+    <video class="full-video" src="assets/running-skeleton.mp4" autoplay loop muted playsinline></video>
+  </section>
+
+  <!-- 13 · DESIGN SPRINT + Challenges sticky card -->
+  <section class="slide video-slide">
+    <video class="full-video" src="assets/running-skeleton.mp4" autoplay loop muted playsinline></video>
+    <div class="sticky" style="--i:0;--rot:-6deg;right:8vw;top:36vh">CHALLENGES</div>
+    <div class="sticky" style="--i:1;--rot:-8deg;top:15vh;left:8vw">VISION</div>
+    <div class="sticky" style="--i:2;--rot:6deg;bottom:13vh;left:13vw">PERSONA</div>
+    <div class="sticky" style="--i:3;--rot:-5deg;bottom:10vh;left:41vw">JOBS TO BE DONE</div>
+    <div class="sticky" style="--i:4;--rot:5deg;top:15vh;left:45vw">UI HACKING</div>
+    <div class="sticky" style="--i:5;--rot:7deg;bottom:13vh;right:9vw">USER JOURNEY MAP</div>
+    <div class="sticky" style="--i:6;--rot:-7deg;top:14vh;right:27vw">SKETCHING</div>
+  </section>
+
+  <!-- 14 · AGENT LAYERS · emphasize the two middle (Skills + Context) -->
+  <section class="slide layers-slide emph-slide">
+    <div class="layers-title">AGENTS</div>
+    <span class="emph frag"></span>
+    <div class="iso-stage">
+      <div class="iso-wrap">
+        <div class="iso">
+          <div class="slab s4">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s3">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s2">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s1">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+        </div>
+        <div class="callout r3">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>CONTEXT</b>everything it reads</span>
+        </div>
+        <div class="callout r2">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>SKILLS</b>the professional brain</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 16 · AGENT BRIEF · 4-point quote on the left, layer stack on the right -->
+  <section class="slide layers-slide instruct-slide">
+    <div class="instruct-panel">
+      <div class="pre">HOW YOU BRIEF AN AGENT</div>
+      <div class="instruct-item frag">
+        <div class="n">01</div>
+        <div>
+          <h4>Goal <span class="why">(autonomy)</span></h4>
+          <p>"You need to get X. You decide how: which steps, which skills, in what order."</p>
+        </div>
+      </div>
+      <div class="instruct-item frag">
+        <div class="n">02</div>
+        <div>
+          <h4>Loop <span class="why">(loop)</span></h4>
+          <p>"Work in a loop until Y is done. Check each result against [success criteria], then decide your next move. You decide when it's good enough."</p>
+        </div>
+      </div>
+      <div class="instruct-item frag">
+        <div class="n">03</div>
+        <div>
+          <h4>Tools &amp; connections <span class="why">(memory)</span></h4>
+          <p>"You have these tools/skills: […]. Choose what to use and when. If context is missing, go get it yourself."</p>
+        </div>
+      </div>
+      <div class="instruct-item frag">
+        <div class="n">04</div>
+        <div>
+          <h4>Boundaries <span class="why">(judgment)</span></h4>
+          <p>"You may decide A, B, C on your own. Stop and ask me before [irreversible calls]. Stay within [scope/budget]."</p>
+        </div>
+      </div>
+    </div>
+    <div class="iso-stage">
+      <div class="iso-wrap">
+        <div class="iso">
+          <div class="slab s4">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s3">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s2">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s1">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+        </div>
+        <div class="callout r3">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>CONTEXT</b>everything it reads</span>
+        </div>
+        <div class="callout r2">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>SKILLS</b>the professional brain</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AGENT LAYERS · emphasize the FIRST + LAST layers (Agent + Autonomy) -->
+  <section class="slide layers-slide edges-slide">
+    <div class="layers-title">AGENTS</div>
+    <span class="emph frag"></span>
+    <div class="iso-stage">
+      <div class="iso-wrap">
+        <div class="iso">
+          <div class="slab s4">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s3">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s2">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+          <div class="slab s1">
+            <div class="face f-front"></div><div class="face f-back"></div>
+            <div class="face f-right"></div><div class="face f-left"></div>
+            <div class="face f-top"></div><div class="face f-bottom"></div>
+          </div>
+        </div>
+        <div class="callout r4">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>AGENT</b>what it is &amp; how it works</span>
+        </div>
+        <div class="callout r1">
+          <span class="co-line"></span>
+          <span class="co-txt"><b>AUTONOMY</b>how much it decides on its own</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- playful transition into the finale -->
+  <section class="slide statement-slide">
+    <h2 class="serif glow-m" style="font-style:italic;color:var(--ink);font-size:clamp(34px,5.2vw,82px);max-width:22ch">But hey, while we're at it, <span class="m">why not…</span></h2>
+  </section>
+
+  <!-- the answer -->
+  <section class="slide statement-slide">
+    <h2>MULTI <span class="b glow-b">AGENTS</span></h2>
+  </section>
+
+  <!-- MEET PHEBE (duplicate) -->
+  <section class="slide phebe-slide">
+    <h2>MEET <span class="b glow-b">PHEBE</span>.</h2>
+    <div class="phebe-status">Phebe is speaking…</div>
+    <canvas class="phebe-orb" id="phebeOrb2" aria-hidden="true"></canvas>
+  </section>
+
+  <!-- THESIS (anchor) · moved to the end · build: center → right card → left card -->
+  <section class="slide thesis-slide">
+    <h2>AGENTS AT THE <span class="b glow-b">EDGES</span>.</h2>
+    <div class="diagram">
+      <div class="node center">
+        <img class="skull" src="assets/skull.png" alt="" />
+        <div class="name">YOU</div>
+        <div class="tag">the decision</div>
+      </div>
+      <!-- revealed 1st (right): line draws outward, then card -->
+      <div class="side right frag">
+        <span class="edge-line"></span>
+        <div class="node edge">
+          <div class="name">REVIEW</div>
+        </div>
+      </div>
+      <!-- revealed 2nd (left): longer line, card at the far edge -->
+      <div class="side left frag">
+        <div class="node edge">
+          <div class="name">RESEARCH</div>
+        </div>
+        <span class="edge-line"></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="chrome">
+  <div><span class="dot"></span> THE RESEARCH YOU SHOULDN'T RUN ALONE</div>
+  <div class="nav">
+    <span id="count">01 / 08</span>
+    <input id="goto" type="text" inputmode="numeric" maxlength="2" placeholder="GO #" aria-label="go to slide" />
+  </div>
+</div>
+
+<script>
+/* Phebe VoiceOrb — ported from phebe-dashboard/src/components/VoiceOrb.tsx
+   (the JARVIS-style canvas orb), locked to the "speaking" state with a
+   synthetic amplitude oscillation so it breathes + the waveform moves. */
+(function(){
+  document.querySelectorAll('.phebe-orb').forEach(function(canvas){
+  const ctx=canvas.getContext('2d');
+  const dpr=window.devicePixelRatio||1;
+  const size=1000;
+  canvas.width=size*dpr; canvas.height=size*dpr;
+  ctx.scale(dpr,dpr);
+  const cx=size/2, cy=size/2;
+  const statusEl=canvas.closest('.phebe-slide').querySelector('.phebe-status');
+  // loop the states: speaking (3s) -> thinking (3s) -> repeat
+  const labels={speaking:"Phebe is speaking…",thinking:"Phebe is thinking…"};
+  const colors={speaking:{r:140,g:160,b:255},thinking:{r:168,g:85,b:247}};
+  let state="speaking";
+  setInterval(()=>{
+    state = state==="speaking" ? "thinking" : "speaking";
+    if(statusEl) statusEl.textContent=labels[state];
+  },3000);
+  let frame=0, t=0, smoothedAmp=0;
+  function render(){
+    frame++;
+    t+=0.045;
+    const col=colors[state];
+    const target=0.25+Math.abs(Math.sin(t*0.5))*0.4;
+    smoothedAmp=smoothedAmp*0.94+target*0.06;
+    const amp=smoothedAmp;
+    ctx.clearRect(0,0,size,size);
+    // scale the whole orb 1.5× about its center (glow, rings, waveform all grow)
+    ctx.save();
+    ctx.translate(cx,cy); ctx.scale(1.5,1.5); ctx.translate(-cx,-cy);
+    const baseRadius=140+amp*70;
+    // outer glow
+    const gg=ctx.createRadialGradient(cx,cy,baseRadius*0.3,cx,cy,baseRadius*2);
+    gg.addColorStop(0,`rgba(${col.r},${col.g},${col.b},${0.45+amp*0.3})`);
+    gg.addColorStop(0.5,`rgba(${col.r},${col.g},${col.b},0.12)`);
+    gg.addColorStop(1,`rgba(${col.r},${col.g},${col.b},0)`);
+    ctx.fillStyle=gg; ctx.fillRect(0,0,size,size);
+    // inner core: #7188F5 -> #1A2A76
+    const cg=ctx.createRadialGradient(cx,cy,0,cx,cy,baseRadius);
+    cg.addColorStop(0,'rgba(113,136,245,1)');
+    cg.addColorStop(1,'rgba(26,42,118,1)');
+    ctx.fillStyle=cg;
+    ctx.beginPath(); ctx.arc(cx,cy,baseRadius,0,Math.PI*2); ctx.fill();
+    // particle rings
+    const rings=[{p:28,r:baseRadius+24,s:2.4,o:0.9},
+                 {p:42,r:baseRadius+56,s:2,o:0.6},
+                 {p:56,r:baseRadius+96,s:1.6,o:0.35}];
+    const thinkingSpin = state==="thinking" ? frame*0.02 : 0;
+    for(let r=0;r<rings.length;r++){
+      const ring=rings[r];
+      const ringSpin = thinkingSpin*(r%2===0?1:-1);
+      for(let i=0;i<ring.p;i++){
+        const angle=(i/ring.p)*Math.PI*2 + ringSpin;
+        const jitter=Math.sin(frame*0.05+i+r*2)*(4+amp*36);
+        const radius=ring.r+jitter;
+        const x=cx+Math.cos(angle)*radius, y=cy+Math.sin(angle)*radius;
+        ctx.fillStyle=`rgba(${col.r},${col.g},${col.b},${ring.o*(0.6+amp*0.5)})`;
+        ctx.beginPath(); ctx.arc(x,y,ring.s+amp*0.8,0,Math.PI*2); ctx.fill();
+      }
+    }
+    // waveform across the middle — only while speaking
+    if(state==="speaking"){
+      ctx.strokeStyle=`rgba(255,255,255,${0.4+amp*0.4})`;
+      ctx.lineWidth=3; ctx.beginPath();
+      const points=40;
+      for(let i=0;i<=points;i++){
+        const tt=i/points;
+        const x=cx-baseRadius*0.7+tt*baseRadius*1.4;
+        const wavY=cy+Math.sin(tt*Math.PI*4+frame*0.15)*(16+amp*48)*Math.sin(tt*Math.PI);
+        if(i===0)ctx.moveTo(x,wavY); else ctx.lineTo(x,wavY);
+      }
+      ctx.stroke();
+    }
+    ctx.restore();
+    requestAnimationFrame(render);
+  }
+  render();
+  });
+})();
+</script>
+
+<script>
+const slides=[...document.querySelectorAll('.slide')];
+/* index the full-screen wall chips so they pop in one-after-another */
+document.querySelectorAll('.wall .chip').forEach((c,k)=>c.style.setProperty('--i',k));
+/* index the skills per slide (left column first, then right) for the cascade */
+document.querySelectorAll('.skills-slide').forEach(sl=>{
+  sl.querySelectorAll('.skill').forEach((s,k)=>s.style.setProperty('--i',k));
+});
+/* randomize the dot-grid fade origin per slide: left / center / right + jitter */
+slides.forEach(s=>{
+  const buckets=[20,50,80];                       // left · center · right
+  const x=buckets[Math.floor(Math.random()*buckets.length)] + (Math.random()*16-8);
+  const y=42 + Math.random()*16;                  // ~42–58% vertically
+  s.style.setProperty('--fade-x', x.toFixed(1)+'%');
+  s.style.setProperty('--fade-y', y.toFixed(1)+'%');
+});
+let i=0;
+const prog=document.getElementById('prog');
+const count=document.getElementById('count');
+function pad(n){return String(n).padStart(2,'0')}
+function show(n){
+  i=Math.max(0,Math.min(slides.length-1,n));
+  slides.forEach((s,k)=>s.classList.toggle('active',k===i));
+  // reset every slide's build-steps so they replay when re-entered
+  slides.forEach(s=>s.querySelectorAll('.frag').forEach(f=>f.classList.remove('show')));
+  prog.style.width=((i)/(slides.length-1)*100)+'%';
+  count.textContent=pad(i+1)+' / '+pad(slides.length);
+  if(slides[i].classList.contains('wall-slide')) prepBoom(slides[i]);
+}
+/* Mark the chips sitting under the skull and pre-compute how far each gets
+   blown outward, so the burst (.boom.show) can scatter them via CSS vars. */
+function prepBoom(slide){
+  const wall=slide.querySelector('.wall'); if(!wall) return;
+  const chips=[...wall.querySelectorAll('.chip')];
+  const cx=wall.offsetWidth/2, cy=wall.offsetHeight/2;
+  const hole=Math.min(wall.offsetWidth,wall.offsetHeight)*0.23;
+  chips.forEach((c,k)=>{
+    const dx=(c.offsetLeft+c.offsetWidth/2)-cx;
+    const dy=(c.offsetTop+c.offsetHeight/2)-cy;
+    const dist=Math.hypot(dx,dy)||1;
+    if(dist < hole*1.7){
+      c.classList.add('near');
+      const ux=dx/dist, uy=dy/dist;
+      const push=(hole*1.85 - dist);                 // shove past the hole edge
+      const jx=Math.sin(k*12.9)*26, jy=Math.cos(k*7.3)*26;   // messy scatter
+      c.style.setProperty('--dx',(ux*push+jx).toFixed(1)+'px');
+      c.style.setProperty('--dy',(uy*push+jy).toFixed(1)+'px');
+      c.style.setProperty('--rot',(Math.sin(k*3.1)*18).toFixed(1)+'deg');
+      c.style.zIndex = 11 + (k%9);                    // overlap each other
+    } else {
+      c.classList.remove('near');
+      c.style.removeProperty('--dx'); c.style.removeProperty('--dy');
+      c.style.removeProperty('--rot'); c.style.zIndex='';
+    }
+  });
+}
+function frags(){return [...slides[i].querySelectorAll('.frag')]}
+function next(){
+  const hidden=frags().find(f=>!f.classList.contains('show'));
+  if(hidden){hidden.classList.add('show');return;}   // reveal next build-step first
+  show(i+1);
+}
+function prev(){
+  const shown=frags().filter(f=>f.classList.contains('show'));
+  if(shown.length){shown[shown.length-1].classList.remove('show');return;} // step back
+  show(i-1);
+}
+document.addEventListener('keydown',e=>{
+  if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}
+  else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prev()}
+  else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);
+  else if(e.key==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}
+});
+document.addEventListener('click',e=>{
+  if(e.target.closest('.chrome'))return;            // don't navigate when using the footer controls
+  if(e.clientX<window.innerWidth*0.5)prev();else next();
+});
+/* type a slide number in the footer input + Enter to jump there */
+const goto=document.getElementById('goto');
+goto.addEventListener('keydown',e=>{
+  e.stopPropagation();                              // keep typing from triggering slide nav
+  if(e.key==='Enter'){
+    const n=parseInt(goto.value,10);
+    if(!isNaN(n))show(n-1);                          // 1-based input → 0-based index
+    goto.value='';goto.blur();
+  }else if(e.key==='Escape'){goto.value='';goto.blur();}
+});
+show(0);
+</script>
+</body>
+</html>

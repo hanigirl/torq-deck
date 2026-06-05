@@ -1,0 +1,6 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    { "name": "deck", "runtimeExecutable": "python3", "runtimeArgs": ["/tmp/deckserve/serve.py"], "port": 4599 }
+  ]
+}
