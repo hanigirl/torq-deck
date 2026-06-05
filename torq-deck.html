@@ -283,7 +283,29 @@ h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter
 @keyframes edgeDraw{from{transform:scaleX(0)}to{transform:scaleX(1)}}
 @keyframes edgeCardIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 
-/* ---------- slide 3: isometric square layers (centered) ---------- */
+/* ---------- slide 3: evolution of the AI workflow (numbered skeletons) ---------- */
+.evo-slide{align-items:center;justify-content:center;text-align:center;
+  padding-top:4vh;padding-bottom:4vh}
+/* title demoted to the deck's subtle footer label style (mono, muted, uppercase) */
+.evo-label{font-family:"IBM Plex Mono",monospace;font-size:clamp(11px,1.1vw,14px);
+  letter-spacing:.22em;color:var(--ink-mute);text-transform:uppercase;margin-bottom:1.6vh}
+/* each skeleton is its own cut-out; the 5 columns reveal one per click.
+   all strips share the same canvas height + baseline, so rendering them at
+   one height keeps their relative sizes and lands every number on one line. */
+.evo-row{display:flex;align-items:flex-end;justify-content:center;
+  gap:1vw;width:100%}
+.evo-col{display:flex;flex-direction:column;align-items:center;gap:1.2vh}
+.evo-col.frag{opacity:0;transform:translateY(16px);
+  transition:opacity .55s ease,transform .55s cubic-bezier(.2,.8,.25,1)}
+.evo-col.frag.show{opacity:1;transform:none}
+.evo-fig{height:64vh;width:auto;display:block;
+  filter:drop-shadow(0 14px 40px rgba(90,45,170,.45))}
+/* captions in the title display font (Bebas Neue), small */
+.evo-txt{font-family:"Bebas Neue",sans-serif;font-weight:400;
+  font-size:clamp(15px,1.9vw,30px);letter-spacing:.03em;line-height:1;
+  color:var(--ink);text-shadow:0 0 28px rgba(77,123,255,.35)}
+
+/* ---------- slide 4: isometric square layers (centered) ---------- */
 .layers-slide{align-items:center;justify-content:center;text-align:center}
 .layers-title{position:absolute;top:100px;left:0;right:0;
   font-family:"Bebas Neue";font-size:clamp(32px,4.4vw,72px);letter-spacing:.04em;
@@ -581,7 +603,19 @@ h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter
     <canvas class="phebe-orb" id="phebeOrb" aria-hidden="true"></canvas>
   </section>
 
-  <!-- 3 · LAYERS (centered isometric stack + callouts) -->
+  <!-- 3 · EVOLUTION OF THE AI WORKFLOW (numbered skeleton stages) -->
+  <section class="slide evo-slide">
+    <div class="evo-label">The Evolution of AI Workflow</div>
+    <div class="evo-row">
+      <div class="evo-col frag"><img class="evo-fig" src="assets/skeleton-1.png" alt="Stage 1 — Chat" /><p class="evo-txt">Chat</p></div>
+      <div class="evo-col frag"><img class="evo-fig" src="assets/skeleton-2.png" alt="Stage 2 — Knowledge base" /><p class="evo-txt">Knowledge base</p></div>
+      <div class="evo-col frag"><img class="evo-fig" src="assets/skeleton-3.png" alt="Stage 3 — Skill" /><p class="evo-txt">Skill</p></div>
+      <div class="evo-col frag"><img class="evo-fig" src="assets/skeleton-4.png" alt="Stage 4 — Skill + connectors" /><p class="evo-txt">Skill + connectors</p></div>
+      <div class="evo-col frag"><img class="evo-fig" src="assets/skeleton-5.png" alt="Stage 5 — Agent" /><p class="evo-txt">Agent</p></div>
+    </div>
+  </section>
+
+  <!-- 4 · LAYERS (centered isometric stack + callouts) -->
   <section class="slide layers-slide">
     <div class="layers-title">AGENTS</div>
     <div class="iso-stage frag">
