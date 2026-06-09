@@ -731,6 +731,29 @@ h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter
 /* both images share one height (width follows each one's aspect ratio) */
 .feature-stack img{height:56vh;width:auto;max-width:none;object-fit:contain;
   border-radius:12px;border:1px solid var(--line);box-shadow:0 18px 50px rgba(0,0,0,.4)}
+/* challenge → feature-idea sticky-note pairs, left-aligned, stacked & overlapping */
+.note-board{display:flex;flex-direction:column;align-items:flex-start;width:100%;
+  flex:1;min-height:0;padding-top:1vh}
+.note-pair{display:flex;flex-direction:row;align-items:flex-start;justify-content:flex-start;
+  gap:0;width:100%;padding-inline-start:6vw}
+.note-pair.pair2{margin-top:-6.5vh;padding-inline-start:10vw;position:relative;left:400px;z-index:2}
+.snote-emoji{font-size:clamp(46px,5.5vw,84px);line-height:1;margin-top:.4vh}
+.snote{width:min(28vw,400px);min-height:26vh;padding:2.6vh 2vw;border-radius:5px;
+  display:flex;flex-direction:column;gap:1.4vh;box-shadow:0 22px 48px rgba(0,0,0,.45);
+  font-family:"Inter",sans-serif;
+  transform:rotate(var(--rot,0deg)) translateY(var(--ty,0px)) scale(var(--s,1))}
+.snote.yellow{background:#ffe072;color:#3a2e00;--rot:-2.5deg}
+.snote.pink{background:#ff9ecb;color:#4a0f33;--rot:2deg;
+  margin-inline-start:-3vw;position:relative;z-index:2}
+.pair2 .snote.yellow{--rot:1.6deg}
+.pair2 .snote.pink{--rot:-2.2deg}
+/* each sticky pops in on its own click */
+.snote.frag{opacity:0;--ty:16px;--s:.9;
+  transition:opacity .45s ease,transform .5s cubic-bezier(.2,1.5,.35,1)}
+.snote.frag.show{opacity:1;--ty:0px;--s:1}
+.snote .snote-label{font-family:"IBM Plex Mono",monospace;font-size:clamp(13px,1.25vw,18px);
+  letter-spacing:.1em;text-transform:uppercase;font-weight:600;opacity:.65}
+.snote .snote-body{font-size:clamp(19px,1.85vw,29px);line-height:1.42;font-weight:600}
 /* relay-race statement — the baton-pass arm sits above the title */
 .relay-slide{align-items:center;justify-content:center;text-align:center}
 .relay-slide .relay-arms{position:absolute;left:50%;bottom:calc(50% + 6vh);
@@ -1797,9 +1820,28 @@ A task is done when [definition of done].">
   <!-- 34 · FEATURE IDEATION — two board sections stacked -->
   <section class="slide tophead-slide feature-slide">
     <h2 class="top-title">feature <span class="m serif glow-m">ideation</span></h2>
-    <div class="feature-stack">
-      <img src="assets/feature-ideation-1.png" alt="Feature ideation board — Big Job, hooks, brand voice" />
-      <img src="assets/feature-ideation-2.png" alt="Feature ideation board — persona, challenges, jobs to be done" />
+    <div class="note-board">
+      <div class="note-pair">
+        <div class="snote yellow frag">
+          <div class="snote-label">Challenge</div>
+          <div class="snote-body">How do we keep users inside our app instead of wandering off to other apps?</div>
+        </div>
+        <div class="snote pink frag">
+          <div class="snote-label">feature ideation</div>
+          <div class="snote-body">Generate ideas from other creators in your niche</div>
+        </div>
+      </div>
+      <div class="note-pair pair2">
+        <div class="snote yellow frag">
+          <div class="snote-label">user journey</div>
+          <div class="snote-body">Early in the user journey, the user doesn't know where to start.</div>
+          <div class="snote-emoji">😵‍💫</div>
+        </div>
+        <div class="snote pink frag">
+          <div class="snote-label">feature ideation</div>
+          <div class="snote-body">A central, ready-to-use hook library</div>
+        </div>
+      </div>
     </div>
   </section>
 
