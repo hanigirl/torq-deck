@@ -677,6 +677,10 @@ h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter
 .instruct-slide .callout{opacity:1}
 .instruct-slide .callout .co-line{transform:scaleX(1)}
 
+/* full-SCREEN video (with sound) — covers the entire slide, edge to edge */
+.film-slide{padding:0;justify-content:center;align-items:center}
+.film-slide .film-video{position:absolute;inset:0;width:100%;height:100%;
+  object-fit:cover;z-index:2;background:#000}
 /* full-bleed video slide — clip fills the whole width, edge to edge */
 .fullbleed-slide{padding:0;justify-content:center;align-items:center}
 .fullbleed-slide .bleed-video{position:absolute;left:0;top:50%;transform:translateY(-50%);
@@ -1892,6 +1896,11 @@ A task is done when [definition of done].">
     <h2>MEET <span class="b glow-b">PHEBE</span>.</h2>
     <div class="phebe-status">Phebe is speaking…</div>
     <canvas class="phebe-orb" id="phebeOrb2" aria-hidden="true"></canvas>
+  </section>
+
+  <!-- 42 · PHEBE DEMO — full-screen video, WITH sound (not muted) -->
+  <section class="slide film-slide">
+    <video class="film-video" preload="none" data-src="assets/phebe-torq.mp4" autoplay playsinline></video>
   </section>
 
   <!-- 40 · SEESAW (duplicate of slide 31) — some days you're up, some days down -->
