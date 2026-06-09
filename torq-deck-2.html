@@ -1900,7 +1900,7 @@ A task is done when [definition of done].">
 
   <!-- 42 · PHEBE DEMO — full-screen video, WITH sound (not muted) -->
   <section class="slide film-slide">
-    <video class="film-video" preload="none" data-src="assets/phebe-torq.mp4" autoplay playsinline></video>
+    <video class="film-video" preload="none" data-src="assets/phebe-torq.mp4" data-active-only playsinline></video>
   </section>
 
   <!-- 40 · SEESAW (duplicate of slide 31) — some days you're up, some days down -->
@@ -2190,7 +2190,11 @@ function syncVideos(){
   slides.forEach((s,k)=>{
     const active=k===i, near=Math.abs(k-i)<=1;       // prefetch ±1 slide
     s.querySelectorAll('video[data-src]').forEach(v=>{
-      if(near && !v.src){ v.src=v.dataset.src; v.preload='auto'; v.load(); }
+      // most videos prefetch on the neighbouring slide; ones marked
+      // data-active-only (e.g. the Phebe clip, which has SOUND) load only
+      // on their own slide so their audio never starts a slide early.
+      const loadWhen = v.hasAttribute('data-active-only') ? active : near;
+      if(loadWhen && !v.src){ v.src=v.dataset.src; v.preload='auto'; v.load(); }
       if(active){ const p=v.play(); if(p&&p.catch)p.catch(()=>{}); }
       else if(!v.paused){ v.pause(); }
     });
