@@ -1037,6 +1037,10 @@ h1,h2{font-family:"Bebas Neue",sans-serif;font-weight:400;line-height:.92;letter
 .run-arc .arc-mhead{fill:none;stroke:var(--arc-c);stroke-width:1.4;
   stroke-linecap:round;stroke-linejoin:round}
 .run-arc.frag.show{opacity:1;transform:none}
+/* static, click-free variant: Orchestrator + its forward arc shown by default */
+.orch-static .edge-left{transform:scaleX(1)}
+.orch-static .start-agent{opacity:1;transform:translateY(-50%) scale(1)}
+.orch-static .arc-forward{opacity:1;transform:none}
 /* ── closing slide: the tableau video, centered. the <video> sizes itself in flow ── */
 /* push the video to the bottom so it sits right on the .chrome footer line
    (.chrome = 2.4vh top+bottom padding + ~24px content ≈ 4.8vh + 24px tall) */
@@ -1901,6 +1905,27 @@ A task is done when [definition of done].">
   <!-- 42 · PHEBE DEMO — full-screen video, WITH sound (not muted) -->
   <section class="slide film-slide">
     <video class="film-video" preload="none" data-src="assets/phebe-torq.mp4" data-active-only playsinline></video>
+  </section>
+
+  <!-- 43 · ORCHESTRATOR (static, no clicks) — slide-40 state: orchestrator + its forward arc shown -->
+  <section class="slide barfull-slide orch-static">
+    <div class="sprint-bar">
+      <div class="sprint-line"></div>
+      <div class="tick" style="left:0%"><span class="tick-mark"></span><span class="tick-label">MISSION</span></div>
+      <div class="tick" style="left:16.667%"><span class="tick-mark"></span><span class="tick-label">PERSONA</span></div>
+      <div class="tick" style="left:33.333%"><span class="tick-mark"></span><span class="tick-label">HMW</span></div>
+      <div class="tick" style="left:50%"><span class="tick-mark"></span><span class="tick-label">jtbd</span></div>
+      <div class="tick" style="left:66.667%"><span class="tick-mark"></span><span class="tick-label">ujm</span></div>
+      <div class="tick" style="left:83.333%"><span class="tick-mark"></span><span class="tick-label">ui hacking</span></div>
+      <div class="tick" style="left:100%"><span class="tick-mark"></span><span class="tick-label">UJM-WANTED</span></div>
+      <!-- left edge drawn + forward arc (the Orchestrator's run), both shown by default -->
+      <span class="axis-edge edge-left" aria-hidden="true"></span>
+      <svg class="run-arc arc-forward" viewBox="0 0 240 52" aria-hidden="true">
+        <defs><marker id="arcHeadFs" markerUnits="userSpaceOnUse" markerWidth="18" markerHeight="16" refX="13" refY="7" orient="auto"><path class="arc-mhead" d="M2 1 L13 7 L2 13"/></marker></defs>
+        <path class="arc-path" d="M6 50 C 70 -8 170 -8 234 50" marker-end="url(#arcHeadFs)"/>
+      </svg>
+    </div>
+    <div class="end-agent start-agent"><span class="axis-name">Orchestrator</span><img src="assets/agent-orchestrator.png" alt="Orchestrator agent" /></div>
   </section>
 
   <!-- 40 · SEESAW (duplicate of slide 31) — some days you're up, some days down -->
