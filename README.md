@@ -4,11 +4,9 @@ A self-contained HTML slide deck for the talk on how agents became the research 
 
 ## ▶︎ Live presentation
 
-**https://hanigirl.github.io/torq-deck/**
+**https://hanigirl.github.io/torq-deck/torq2/**
 
-(opens the deck directly — good to send to people or run live at the conference)
-
-Direct file: https://hanigirl.github.io/torq-deck/torq-deck-2.html
+(its own standalone link — good to send to people or run live at the conference)
 
 ## Controls
 
@@ -21,7 +19,7 @@ Direct file: https://hanigirl.github.io/torq-deck/torq-deck-2.html
 
 ```bash
 python3 serve.py
-# → http://localhost:8000/torq-deck-2.html
+# → http://localhost:8000/torq2/
 ```
 
-The whole deck lives in a single file: [`torq-deck-2.html`](torq-deck-2.html). All media is in `assets/` and is lazy-loaded (only the active slide ±1 ever downloads).
+The deck lives in [`torq2/index.html`](torq2/index.html); media is in `assets/` (lazy-loaded — only the active slide ±1 ever downloads). A `<base href="../">` lets the deck load those root assets from inside the `torq2/` folder.
