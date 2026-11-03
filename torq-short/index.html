@@ -1632,8 +1632,8 @@ function show(n){
 /* Lazy-load videos: only the active slide (and its immediate neighbours,
    prefetched) ever download. This stops a hard-refresh from pulling the
    whole ~50MB of video at once — it now streams one slide at a time. */
-/* Safari/iOS can't draw WebM alpha (black box behind the robots) but can play
-   HEVC-with-alpha .mov; Chrome/Firefox can't play that, so they keep the WebM. */
+/* Safari/iOS can't draw WebM alpha (a black box behind every cut-out video) but can
+   play HEVC-with-alpha .mov; Chrome/Firefox can't play that, so they keep the WebM. */
 const HEVC_ALPHA=document.createElement('video').canPlayType('video/quicktime; codecs="hvc1"')!=='';
 const pickSrc=v=>(v.dataset.srcHevc&&HEVC_ALPHA)?v.dataset.srcHevc:v.dataset.src;
 function syncVideos(){
