@@ -1351,6 +1351,19 @@ body{-webkit-tap-highlight-color:transparent}
   .ap-body{font-size:clamp(8.5px,min(2.7vh,1.45vw),13px);line-height:1.4;padding:1.6vh 2vw;min-height:0;
     columns:2;column-gap:3vw;column-fill:auto;height:calc(100vh - 175px);height:calc(100dvh - 175px)}
 }
+
+/* ---------- phones: scroll mode (JS adds .scroll-mode) · one long page, a screen per slide ---------- */
+html.scroll-mode,html.scroll-mode body{height:auto;overflow-x:hidden;overflow-y:auto}
+html.scroll-mode{scroll-snap-type:y proximity}
+.scroll-mode .deck{position:relative;inset:auto}
+.scroll-mode .slide{position:relative;inset:auto;display:flex;min-height:100vh;min-height:100svh;
+  padding-bottom:7vh;scroll-snap-align:start}
+.scroll-mode .slide.active{animation:none}
+.scroll-mode .chrome{display:none}
+/* the tree slide can grow here: keep the tree and write the prompt under it */
+.scroll-mode .tree-row{flex-direction:column;align-items:center}
+.scroll-mode .tree-row:has(.agent-prompt.show) .tree-window{max-height:none;max-width:100%;opacity:1;border-width:1px}
+.scroll-mode .agent-prompt.show{margin-top:3vh}
 </style>
 </head>
 <body>
@@ -1377,7 +1390,7 @@ body{-webkit-tap-highlight-color:transparent}
   <!-- 3 · WHAT MAKES IT AN AGENT, with captions (torq2 #20) -->
   <section class="slide orbit-slide orbit-captioned">
     <div class="orbit-stage">
-      <video class="orbit-agent" preload="none" data-src="assets/robot.webm" autoplay loop muted playsinline></video>
+      <video class="orbit-agent" preload="none" data-src="assets/robot.webm" data-src-hevc="assets/robot-hevc.mov" autoplay loop muted playsinline></video>
       <div class="orbit-pair frag">
         <span class="orbit-arrow a1" aria-hidden="true"></span>
         <img class="orbit-item p1" src="assets/robot-clock.png" alt="" aria-hidden="true" />
@@ -1409,7 +1422,7 @@ body{-webkit-tap-highlight-color:transparent}
     </div>
     <div class="rules-body">
       <div class="rules-agent">
-        <video preload="none" data-src="assets/three-robots-alpha.webm" autoplay loop muted playsinline></video>
+        <video preload="none" data-src="assets/three-robots-alpha.webm" data-src-hevc="assets/three-robots-hevc.mov" autoplay loop muted playsinline></video>
       </div>
       <ol class="rules-grid">
         <li class="rule frag">
@@ -1580,6 +1593,10 @@ Done when [N] non-duplicate refs are on the board with analysis, and the summary
 
 <script>
 const slides=[...document.querySelectorAll('.slide')];
+/* phones (portrait, or short landscape): the deck is one long page you scroll down */
+const scrollMQ=matchMedia('(orientation: portrait) and (max-width: 900px), (orientation: landscape) and (max-height: 520px)');
+const scrollMode=scrollMQ.matches;
+scrollMQ.addEventListener('change',()=>location.reload());   // crossing the line swaps layouts
 /* index the full-screen wall chips so they pop in one-after-another */
 document.querySelectorAll('.wall .chip').forEach((c,k)=>c.style.setProperty('--i',k));
 /* index the skills per slide (left column first, then right) for the cascade */
@@ -1615,6 +1632,10 @@ function show(n){
 /* Lazy-load videos: only the active slide (and its immediate neighbours,
    prefetched) ever download. This stops a hard-refresh from pulling the
    whole ~50MB of video at once — it now streams one slide at a time. */
+/* Safari/iOS can't draw WebM alpha (black box behind the robots) but can play
+   HEVC-with-alpha .mov; Chrome/Firefox can't play that, so they keep the WebM. */
+const HEVC_ALPHA=document.createElement('video').canPlayType('video/quicktime; codecs="hvc1"')!=='';
+const pickSrc=v=>(v.dataset.srcHevc&&HEVC_ALPHA)?v.dataset.srcHevc:v.dataset.src;
 function syncVideos(){
   slides.forEach((s,k)=>{
     const active=k===i, near=Math.abs(k-i)<=1;       // prefetch ±1 slide
@@ -1623,7 +1644,7 @@ function syncVideos(){
       // data-active-only (e.g. the Phebe clip, which has SOUND) load only
       // on their own slide so their audio never starts a slide early.
       const loadWhen = v.hasAttribute('data-active-only') ? active : near;
-      if(loadWhen && !v.src){ v.src=v.dataset.src; v.preload='auto'; v.load(); }
+      if(loadWhen && !v.src){ v.src=pickSrc(v); v.preload='auto'; v.load(); }
       if(active){ const p=v.play(); if(p&&p.catch)p.catch(()=>{}); }
       else if(!v.paused){ v.pause(); }
     });
@@ -1764,24 +1785,16 @@ function prev(){
   show(i-1);
 }
 document.addEventListener('keydown',e=>{
+  if(scrollMode)return;                              // phones scroll natively
   if(['ArrowRight','PageDown',' ','Enter'].includes(e.key)){e.preventDefault();next()}
   else if(['ArrowLeft','PageUp'].includes(e.key)){e.preventDefault();prev()}
   else if(e.key==='Home')show(0); else if(e.key==='End')show(slides.length-1);
   else if(e.key==='f'){if(!document.fullscreenElement)document.documentElement.requestFullscreen();else document.exitFullscreen()}
 });
 document.addEventListener('click',e=>{
-  if(e.target.closest('.chrome, .cta-btn'))return; // don't navigate when using the footer controls or the CTA link
+  if(scrollMode||e.target.closest('.chrome, .cta-btn'))return; // don't navigate when using the footer controls or the CTA link
   if(e.clientX<window.innerWidth*0.5)prev();else next();
 });
-/* touch screens: swipe left → next step/slide, swipe right → back (a tap still uses the halves) */
-let touchX=null,touchY=null;
-document.addEventListener('touchstart',e=>{const t=e.changedTouches[0];touchX=t.clientX;touchY=t.clientY},{passive:true});
-document.addEventListener('touchend',e=>{
-  if(touchX===null)return;
-  const t=e.changedTouches[0],dx=t.clientX-touchX,dy=t.clientY-touchY;touchX=null;
-  if(e.target.closest('.chrome'))return;
-  if(Math.abs(dx)>50&&Math.abs(dx)>Math.abs(dy)*1.5){dx<0?next():prev()}
-},{passive:true});
 /* type a slide number in the footer input + Enter to jump there */
 const goto=document.getElementById('goto');
 goto.addEventListener('keydown',e=>{
@@ -1792,7 +1805,37 @@ goto.addEventListener('keydown',e=>{
     goto.value='';goto.blur();
   }else if(e.key==='Escape'){goto.value='';goto.blur();}
 });
-show(0);
+if(!scrollMode) show(0);
+else {
+  /* scroll mode: each slide is a screen tall; its click-steps play by themselves
+     the first time it scrolls into view, and videos load just before their
+     slide arrives and play only while it is on screen. */
+  document.documentElement.classList.add('scroll-mode');
+  const revealSteps=s=>{
+    if(s.dataset.revealed) return; s.dataset.revealed='1';
+    s.querySelectorAll('.frag').forEach((f,k)=>setTimeout(()=>{
+      f.classList.add('show');
+      if(f.classList.contains('type-prompt')) typePrompt(f);
+    },350+k*450));
+  };
+  const preload=new IntersectionObserver(es=>es.forEach(e=>{
+    if(e.isIntersecting) e.target.querySelectorAll('video[data-src]').forEach(v=>{
+      if(!v.src){ v.src=pickSrc(v); v.preload='auto'; v.load(); }
+    });
+  }),{rootMargin:'100% 0px'});
+  const onScreen=new IntersectionObserver(es=>es.forEach(e=>{
+    const s=e.target, on=e.intersectionRatio>=0.45;
+    s.classList.toggle('active',on);
+    s.querySelectorAll('video[data-src]').forEach(v=>{
+      if(on){ const p=v.play(); if(p&&p.catch)p.catch(()=>{}); } else if(!v.paused) v.pause();
+    });
+    if(on) revealSteps(s);
+  }),{threshold:[0,0.45]});
+  slides.forEach(s=>{ preload.observe(s); onScreen.observe(s); });
+  const onScroll=()=>{ const max=document.documentElement.scrollHeight-innerHeight;
+    prog.style.width=(max>0?scrollY/max*100:0)+'%'; };
+  addEventListener('scroll',onScroll,{passive:true}); onScroll();
+}
 </script>
 <script>
 /* QR follows the held screen in the closing video, driven by the video clock so
